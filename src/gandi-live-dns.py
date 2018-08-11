@@ -43,13 +43,13 @@ def get_uuid():
         print  json_object['message']
         exit()
 
-def get_dnsip(uuid, subdomain):
+def get_dnsip(uuid, subdomain, record_type):
     ''' find out IP from Subdomain DNS-Record
     List all records with name "NAME" and type "TYPE" in the zone UUID
     GET /zones/<UUID>/records/<NAME>/<TYPE>:
     '''
 
-    url = config.api_endpoint+ '/zones/' + uuid + '/records/' + subdomain + '/A'
+    url = config.api_endpoint+ '/zones/' + uuid + '/records/' + subdomain + '/' + record_type
     headers = {"X-Api-Key":config.api_secret}
     u = requests.get(url, headers=headers)
     json_object = json.loads(u._content)
@@ -62,7 +62,7 @@ def get_dnsip(uuid, subdomain):
         print  json_object['message']
         return "-1"
 
-def update_records(uuid, dynIP, subdomain):
+def update_records(uuid, dynIP, subdomain, record_type):
     ''' update DNS Records for Subdomains 
         Change the "NAME"/"TYPE" record from the zone UUID
         PUT /zones/<UUID>/records/<NAME>/<TYPE>:
@@ -72,7 +72,7 @@ def update_records(uuid, dynIP, subdomain):
                          "rrset_values": ["<VALUE>"]}' \
                     https://dns.gandi.net/api/v5/zones/<UUID>/records/<NAME>/<TYPE>
     '''
-    url = config.api_endpoint+ '/zones/' + uuid + '/records/' + subdomain + '/A'
+    url = config.api_endpoint+ '/zones/' + uuid + '/records/' + subdomain + '/' + record_type
     payload = {"rrset_ttl": config.ttl, "rrset_values": [dynIP]}
     headers = {"Content-Type": "application/json", "X-Api-Key":config.api_secret}
     u = requests.put(url, data=json.dumps(payload), headers=headers)
@@ -88,6 +88,24 @@ def update_records(uuid, dynIP, subdomain):
         exit()
 
 
+def update_zone(uuid, ifconfig_provider, record_type, force_update):
+
+    #get dynIP
+    dynIP = get_dynip(ifconfig_provider)
+
+    for sub in config.subdomains:
+        #get DNS IP for subdomain
+        dnsIP = get_dnsip(uuid, sub, record_type)
+        
+        #compare dynIP and DNS IP
+        if dynIP == dnsIP and not force_update:
+            if args.verbose:
+                print "IP Address Match - no further action for subdomain", sub
+        else:
+            print "Going to update/create the DNS Records for the subdomain", sub, "old IP", dnsIP, "new IP", dynIP
+            update_records(uuid, dynIP, sub, record_type)
+
+
 
 def main(force_update, verbosity):
 
@@ -97,21 +115,12 @@ def main(force_update, verbosity):
         
     #get zone ID from Account
     uuid = get_uuid()
-   
-    #get dynIP 
-    dynIP = get_dynip(config.ifconfig)
+
+    if config.ifconfig4:
+        update_zone(uuid, config.ifconfig, "A", force_update)
     
-    for sub in config.subdomains:
-        #get DNS IP for subdomain
-        dnsIP = get_dnsip(uuid, sub)
-        
-        #compare dynIP and DNS IP 
-        if dynIP == dnsIP and not force_update:
-            if args.verbose:
-                print "IP Address Match - no further action for subdomain", sub
-        else:
-            print "Going to update/create the DNS Records for the subdomain", sub, "old IP", dnsIP, "new IP", dynIP  
-            update_records(uuid, dynIP, sub)
+    if config.ifconfig6:
+        update_zone(uuid, config.ifconfig6, "AAAA", force_update)
 
 
 if __name__ == "__main__":

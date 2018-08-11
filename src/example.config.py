@@ -41,5 +41,13 @@ e.g.
 + http://whatismyip.akamai.com/
 + http://ipinfo.io/ip
 + many more ...
+
+ifconfig4 should return an IPV4 address
++ https://v4.ident.me
+ifconfig6 should return an IPV6 address
++ https://v6.ident.me
+
+or leave either one empty to ignore IPV4 or IPV6
 '''
-ifconfig = 'choose_from_above_or_run_your_own'
+ifconfig4 = 'choose_from_above_or_run_your_own'
+ifconfig6 = ''
