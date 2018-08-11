@@ -22,7 +22,8 @@ def get_dynip(ifconfig_provider):
     similar to curl ifconfig.me/ip, see example.config.py for details to ifconfig providers 
     ''' 
     r = requests.get(ifconfig_provider)
-    print 'Checking dynamic IP :' , r._content.strip('\n')
+    if args.verbose:
+        print 'Checking dynamic IP :' , r._content.strip('\n')
     return r.content.strip('\n')
 
 def get_uuid():
@@ -53,7 +54,8 @@ def get_dnsip(uuid, subdomain):
     u = requests.get(url, headers=headers)
     json_object = json.loads(u._content)
     if u.status_code == 200:
-        print 'Checking IP from DNS Record' , subdomain, ':', json_object['rrset_values'][0].encode('ascii','ignore').strip('\n')
+        if args.verbose:
+            print 'Checking IP from DNS Record' , subdomain, ':', json_object['rrset_values'][0].encode('ascii','ignore').strip('\n')
         return json_object['rrset_values'][0].encode('ascii','ignore').strip('\n')
     else:
         print 'Error: HTTP Status Code ', u.status_code, 'when trying to get IP from subdomain', subdomain   
@@ -77,7 +79,8 @@ def update_records(uuid, dynIP, subdomain):
     json_object = json.loads(u._content)
 
     if u.status_code == 201:
-        print 'Status Code:', u.status_code, ',', json_object['message'], ', IP updated for', subdomain
+        if args.verbose:
+            print 'Status Code:', u.status_code, ',', json_object['message'], ', IP updated for', subdomain
         return True
     else:
         print 'Error: HTTP Status Code ', u.status_code, 'when trying to update IP from subdomain', subdomain   
@@ -89,7 +92,7 @@ def update_records(uuid, dynIP, subdomain):
 def main(force_update, verbosity):
 
     if verbosity:
-        print "verbosity turned on - not implemented by now"
+        print "verbosity turned on"
 
         
     #get zone ID from Account
@@ -104,9 +107,10 @@ def main(force_update, verbosity):
         
         #compare dynIP and DNS IP 
         if dynIP == dnsIP and not force_update:
-            print "IP Address Match - no further action for subdomain", sub
+            if args.verbose:
+                print "IP Address Match - no further action for subdomain", sub
         else:
-            print "Going to update/create the DNS Records for the subdomain", sub, "IP", dynIP  
+            print "Going to update/create the DNS Records for the subdomain", sub, "old IP", dnsIP, "new IP", dynIP  
             update_records(uuid, dynIP, sub)
 
 
