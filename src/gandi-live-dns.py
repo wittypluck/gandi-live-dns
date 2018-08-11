@@ -61,7 +61,7 @@ def get_dnsip(uuid):
     else:
         print 'Error: HTTP Status Code ', u.status_code, 'when trying to get IP from subdomain', config.subdomains[0]   
         print  json_object['message']
-        exit()
+        return "-1"
 
 def update_records(uuid, dynIP, subdomain):
     ''' update DNS Records for Subdomains 
