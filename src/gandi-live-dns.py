@@ -90,6 +90,8 @@ def update_records(uuid, dynIP, subdomain, record_type):
 
 def update_zone(uuid, ifconfig_provider, record_type, force_update):
 
+    dns_updated = False
+
     #get dynIP
     dynIP = get_dynip(ifconfig_provider)
 
@@ -103,11 +105,14 @@ def update_zone(uuid, ifconfig_provider, record_type, force_update):
                 print "IP Address Match - no further action for subdomain", sub
         else:
             print "Going to update/create the DNS Records for the subdomain", sub, "old IP", dnsIP, "new IP", dynIP
-            update_records(uuid, dynIP, sub, record_type)
+            dns_updated = update_records(uuid, dynIP, sub, record_type) or dns_updated
 
+    return dns_updated
 
 
 def main(force_update, verbosity):
+
+    dns_updated = False
 
     if verbosity:
         print "verbosity turned on"
@@ -117,10 +122,15 @@ def main(force_update, verbosity):
     uuid = get_uuid()
 
     if config.ifconfig4:
-        update_zone(uuid, config.ifconfig4, "A", force_update)
+        dns_updated = update_zone(uuid, config.ifconfig4, "A", force_update) or dns_updated
     
     if config.ifconfig6:
-        update_zone(uuid, config.ifconfig6, "AAAA", force_update)
+        dns_updated = update_zone(uuid, config.ifconfig6, "AAAA", force_update) or dns_updated
+
+    if dns_updated:
+        exit(2)
+    else:
+        exit(0)
 
 
 if __name__ == "__main__":
@@ -128,12 +138,5 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
     parser.add_argument('-f', '--force', help="force an update/create", action="store_true")
     args = parser.parse_args()
-        
-        
+
     main(args.force, args.verbose)
-
-
-
-
-
-    
