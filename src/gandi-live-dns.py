@@ -117,7 +117,7 @@ def main(force_update, verbosity):
     uuid = get_uuid()
 
     if config.ifconfig4:
-        update_zone(uuid, config.ifconfig, "A", force_update)
+        update_zone(uuid, config.ifconfig4, "A", force_update)
     
     if config.ifconfig6:
         update_zone(uuid, config.ifconfig6, "AAAA", force_update)
