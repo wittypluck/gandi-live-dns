@@ -47,14 +47,14 @@ def get_dynip(session, ifconfig_provider):
         print 'Checking dynamic IP :' , r._content.strip('\n')
     return r.content.strip('\n')
 
-def get_uuid(session):
+def get_uuid(session, domain):
     ''' 
     find out ZONE UUID from domain
     Info on domain "DOMAIN"
     GET /domains/<DOMAIN>:
         
     '''
-    url = config.api_endpoint + '/domains/' + config.domain
+    url = config.api_endpoint + '/domains/' + domain
     u = session.get(url, headers={"X-Api-Key":config.api_secret}, timeout=config.timeout)
     json_object = json.loads(u._content)
     if u.status_code == 200:
@@ -109,14 +109,11 @@ def update_records(session, uuid, dynIP, subdomain, record_type):
         exit()
 
 
-def update_zone(session, uuid, ifconfig_provider, record_type, force_update):
+def update_zone(session, uuid, subdomains, dynIP, record_type, force_update):
 
     dns_updated = False
 
-    #get dynIP
-    dynIP = get_dynip(session, ifconfig_provider)
-
-    for sub in config.subdomains:
+    for sub in subdomains:
         #get DNS IP for subdomain
         dnsIP = get_dnsip(session, uuid, sub, record_type)
         
@@ -130,6 +127,23 @@ def update_zone(session, uuid, ifconfig_provider, record_type, force_update):
 
     return dns_updated
 
+def update_domain(session, domain, subdomains, ipv4, ipv6, force_update):
+
+    dns_updated = False
+
+    #get zone ID of domain
+    uuid = get_uuid(session, domain)
+
+    if args.verbose:
+        print 'Updating domain', domain, ', uuid', uuid
+
+    if ipv4:
+        dns_updated = update_zone(session, uuid, subdomains, ipv4, "A", force_update) or dns_updated
+
+    if ipv6:
+        dns_updated = update_zone(session, uuid, subdomains, ipv6, "AAAA", force_update) or dns_updated
+
+    return dns_updated
 
 def main(force_update, verbosity):
 
@@ -141,15 +155,14 @@ def main(force_update, verbosity):
         print "verbosity turned on"
 
     session = requests_retry_session(retries=config.retries, backoff_factor=config.backoff_factor)
-
-    #get zone ID from Account
-    uuid = get_uuid(session)
-
+    
     if config.ifconfig4:
-        dns_updated = update_zone(session, uuid, config.ifconfig4, "A", force_update) or dns_updated
-
+        ipv4 = get_dynip(session, config.ifconfig4)
     if config.ifconfig6:
-        dns_updated = update_zone(session, uuid, config.ifconfig6, "AAAA", force_update) or dns_updated
+        ipv6 = get_dynip(session, config.ifconfig6)
+
+    for domain, subdomains in config.domains.iteritems():
+        dns_updated = update_domain(session, domain, subdomains, ipv4, ipv6, force_update) or dns_updated
 
     t1=time.time()
 
