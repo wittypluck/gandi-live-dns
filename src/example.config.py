@@ -29,6 +29,11 @@ subdomains = ["subdomain1", "subdomain2", "subdomain3"]
 #300 seconds = 5 minutes
 ttl = '300'
 
+#request timeout
+timeout=5
+retries=3
+backoff_factor=0.3
+
 ''' 
 IP address lookup service 
 run your own external IP provider:
