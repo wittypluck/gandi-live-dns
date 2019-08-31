@@ -16,6 +16,7 @@ import time
 import requests, json
 import config
 import argparse
+import netifaces
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
@@ -46,6 +47,15 @@ def get_dynip(session, ifconfig_provider):
     if args.verbose:
         print 'Checking dynamic IP :' , r._content.strip('\n')
     return r.content.strip('\n')
+
+def get_ipv6(interface):
+    for iface in netifaces.ifaddresses(interface)[netifaces.AF_INET6]:
+        ip6 = iface['addr']
+        if not ip6.startswith('fe80') and not ip6 == "::1":
+            if args.verbose:
+                print 'Checking IPv6 for interface', interface, ':', ip6
+            return ip6
+    return None
 
 def get_uuid(session, domain):
     ''' 
@@ -156,9 +166,14 @@ def main(force_update, verbosity):
 
     session = requests_retry_session(retries=config.retries, backoff_factor=config.backoff_factor)
     
+    ipv4 = None
     if config.ifconfig4:
         ipv4 = get_dynip(session, config.ifconfig4)
-    if config.ifconfig6:
+
+    ipv6 = None
+    if config.interface:
+        ipv6 = get_ipv6(config.interface)
+    elif config.ifconfig6:
         ipv6 = get_dynip(session, config.ifconfig6)
 
     for domain, subdomains in config.domains.iteritems():

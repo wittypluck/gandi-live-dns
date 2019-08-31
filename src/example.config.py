@@ -58,3 +58,9 @@ or leave either one empty to ignore IPV4 or IPV6
 '''
 ifconfig4 = 'choose_from_above_or_run_your_own'
 ifconfig6 = ''
+'''
+Network interface used to find ipv6 locally
+ifconfig6 not used if interfqce is present
+'''
+interface = 'eth0'
+
