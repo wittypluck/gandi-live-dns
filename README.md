@@ -4,7 +4,8 @@ gandi-live-dns
 This is a simple dynamic DNS updater for the
 [Gandi](https://www.gandi.net) registrar. It uses their [LiveDNS REST API](http://doc.livedns.gandi.net/) to update the zone file for a subdomain of a domain to point at the external IPv4 address of the computer it has been run from.
 
-It has been developed on Debian 8 Jessie and tested on Debian 9 Stretch GNU/Linux using Python 2.7.
+Initially developed by cavebat on Debian 8 Jessie and tested on Debian 9 Stretch GNU/Linux using Python 2.7.
+Migrated to Python 3 and tested on Ubuntu 20.04.
 
 With the new v5 Website, Gandi has also launched a new REST API which makes it easier to communicate via bash/curl or python/requests.  
 
@@ -14,7 +15,7 @@ You want your homeserver to be always available at `dynamic_subdomain.mydomain.t
 
 ### Debian Package Requirements
 
-`apt-get update && apt-get upgrade && apt-get install unzip python-requests python-args python-simplejson`
+`apt-get update && apt-get upgrade && apt-get install unzip python3-requests python3-args python3-simplejson`
 
 #### API Key
 First, you must apply for an API key with Gandi. Visit 
@@ -25,11 +26,11 @@ key by following their directions.
 Create the DNS A Records in the GANDI Webinterface which you want to update if your IP changes. 
 
 #### Git Clone or Download the Script
-Download the Script from here as [zip](https://github.com/cavebeat/gandi-live-dns/archive/master.zip)/[tar.gz](https://github.com/cavebeat/gandi-live-dns/archive/master.tar.gz) and extract it.  
+Download the Script from here as [zip](https://github.com/wittypluck/gandi-live-dns/archive/master.zip)/[tar.gz](https://github.com/wittypluck/gandi-live-dns/archive/master.tar.gz) and extract it.  
 
 or clone from git
 
-`git clone https://github.com/cavebeat/gandi-live-dns.git` 
+`git clone https://github.com/wittypluck/gandi-live-dns.git` 
 
 #### Script Configuration
 Then you'd need to configure the script in the src directory.
@@ -93,12 +94,13 @@ usage: gandi-live-dns.py [-h] [-f]
 optional arguments:
   -h, --help     show this help message and exit
   -f, --force    force an update/create
+  -v, --verbose  verbose mode
 
 ```
 
 The force option runs the script, even when no IP change has been detected. 
 It will update all subdomains and even create them if they are missing in the 
-Zone File/Zone UUID. This can be used if additional/new subdomains get appended to the conig file.  
+Zone File/Zone UUID. This can be used if additional/new subdomains get appended to the config file.  
 
 ### IP address lookup service 
 There exist several providers for this case, but better is to run your own somewhere. 
@@ -126,10 +128,6 @@ Run the script every five minutes.
 ```
 ### Limitations
 The XML-RPC API has a limit of 30 requests per 2 seconds, so i guess it's safe to update 25 subdomains at once with the REST API. 
-
-
-### Upcoming Features
-* command line Argument for verbose mode
 
 ### Inspiration   
 
