@@ -45,15 +45,15 @@ def get_dynip(session, ifconfig_provider):
     ''' 
     r = session.get(ifconfig_provider, timeout=config.timeout)
     if args.verbose:
-        print 'Checking dynamic IP :' , r._content.strip('\n')
-    return r.content.strip('\n')
+        print('Checking dynamic IP :' , r.text.strip('\n'))
+    return r.text.strip('\n')
 
 def get_ipv6(interface):
     for iface in netifaces.ifaddresses(interface)[netifaces.AF_INET6]:
         ip6 = iface['addr']
         if not ip6.startswith('fe80') and not ip6 == "::1":
             if args.verbose:
-                print 'Checking IPv6 for interface', interface, ':', ip6
+                print('Checking IPv6 for interface', interface, ':', ip6)
             return ip6
     return None
 
@@ -70,8 +70,8 @@ def get_uuid(session, domain):
     if u.status_code == 200:
         return json_object['zone_uuid']
     else:
-        print 'Error: HTTP Status Code ', u.status_code, 'when trying to get Zone UUID'
-        print  json_object['message']
+        print('Error: HTTP Status Code ', u.status_code, 'when trying to get Zone UUID')
+        print(json_object['message'])
         exit()
 
 def get_dnsip(session, uuid, subdomain, record_type):
@@ -86,11 +86,11 @@ def get_dnsip(session, uuid, subdomain, record_type):
     json_object = json.loads(u._content)
     if u.status_code == 200:
         if args.verbose:
-            print 'Checking IP from DNS Record' , subdomain, ':', json_object['rrset_values'][0].encode('ascii','ignore').strip('\n')
-        return json_object['rrset_values'][0].encode('ascii','ignore').strip('\n')
+            print('Checking IP from DNS Record' , subdomain, ':', json_object['rrset_values'][0])
+        return json_object['rrset_values'][0]
     else:
-        print 'Error: HTTP Status Code ', u.status_code, 'when trying to get IP from subdomain', subdomain   
-        print  json_object['message']
+        print('Error: HTTP Status Code ', u.status_code, 'when trying to get IP from subdomain', subdomain) 
+        print(json_object['message'])
         return "-1"
 
 def update_records(session, uuid, dynIP, subdomain, record_type):
@@ -111,11 +111,11 @@ def update_records(session, uuid, dynIP, subdomain, record_type):
 
     if u.status_code == 201:
         if args.verbose:
-            print 'Status Code:', u.status_code, ',', json_object['message'], ', IP updated for', subdomain
+            print('Status Code:', u.status_code, ',', json_object['message'], ', IP updated for', subdomain)
         return True
     else:
-        print 'Error: HTTP Status Code ', u.status_code, 'when trying to update IP from subdomain', subdomain   
-        print  json_object['message']
+        print('Error: HTTP Status Code ', u.status_code, 'when trying to update IP from subdomain', subdomain)   
+        print(json_object['message'])
         exit()
 
 
@@ -130,9 +130,9 @@ def update_zone(session, uuid, subdomains, dynIP, record_type, force_update):
         #compare dynIP and DNS IP
         if dynIP == dnsIP and not force_update:
             if args.verbose:
-                print "IP Address Match - no further action for subdomain", sub
+                print('IP Address Match - no further action for subdomain', sub)
         else:
-            print "Going to update/create the DNS Records for the subdomain", sub, "old IP", dnsIP, "new IP", dynIP
+            print('Going to update/create the DNS Records for the subdomain', sub, 'old IP', dnsIP, 'new IP', dynIP)
             dns_updated = update_records(session, uuid, dynIP, sub, record_type) or dns_updated
 
     return dns_updated
@@ -145,7 +145,7 @@ def update_domain(session, domain, subdomains, ipv4, ipv6, force_update):
     uuid = get_uuid(session, domain)
 
     if args.verbose:
-        print 'Updating domain', domain, ', uuid', uuid
+        print('Updating domain', domain, ', uuid', uuid)
 
     if ipv4:
         dns_updated = update_zone(session, uuid, subdomains, ipv4, "A", force_update) or dns_updated
@@ -162,7 +162,7 @@ def main(force_update, verbosity):
     dns_updated = False
 
     if verbosity:
-        print "verbosity turned on"
+        print('verbosity turned on')
 
     session = requests_retry_session(retries=config.retries, backoff_factor=config.backoff_factor)
     
@@ -176,13 +176,13 @@ def main(force_update, verbosity):
     elif config.ifconfig6:
         ipv6 = get_dynip(session, config.ifconfig6)
 
-    for domain, subdomains in config.domains.iteritems():
+    for domain, subdomains in config.domains.items():
         dns_updated = update_domain(session, domain, subdomains, ipv4, ipv6, force_update) or dns_updated
 
     t1=time.time()
 
     if verbosity:
-        print 'Took', t1 - t0, 'seconds'
+        print('Took', t1 - t0, 'seconds')
 
     if dns_updated:
         exit(2)
